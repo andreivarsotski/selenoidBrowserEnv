@@ -1,0 +1,44 @@
+version: "3"
+services:
+  selenoid:
+    image: aerokube/selenoid:latest-release
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/:/etc/selenoid/
+    environment:
+      - OVERRIDE_VIDEO_OUTPUT_DIR=/opt/selenoid/video
+    ports:
+      - "4445:4444"
+    command: --container-network  selenoid_network
+    networks:
+      - selenoid_network
+
+  selenoid-ui:
+    image: aerokube/selenoid-ui:latest-release
+    container_name: selenoid-ui
+    links:
+      - selenoid
+    command: --selenoid-uri http://selenoid:4444
+    ports:
+      - "8083:8080"
+    networks:
+      - selenoid_network
+
+  chrome_115:
+    image: selenoid/chrome:115.0
+    container_name: chrome_115.0
+    links:
+      - selenoid
+      - selenoid-ui
+    depends_on:
+      - selenoid
+      - selenoid-ui
+    networks:
+      - selenoid_network
+    volumes:
+      - /dev/shm:/dev/shm
+
+networks:
+  selenoid_network:
+    external:
+      name: selenoid_network
